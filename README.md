@@ -148,8 +148,8 @@ Type `yes` when prompted to confirm.
 ## Configuration Details
 
 ### Environment
-- **Tenant ID**: bf465dc7-3bc8-4944-b018-092572b5c20d
-- **Subscription**: edd4cc45-85c7-4aec-8bf5-648062d519bf
+- **Tenant ID**: <tenant_id>
+- **Subscription**: <subscription_id>
 - **Region**: East US 2
 
 ### Provider Versions
@@ -186,7 +186,7 @@ storage_account_name = "storaccrobkisktf2"  # Must be unique
 Ensure Azure CLI is authenticated:
 ```bash
 az account show
-az account set --subscription edd4cc45-85c7-4aec-8bf5-648062d519bf
+az account set --subscription <subscription_id>
 ```
 
 ### Provider Download Issues

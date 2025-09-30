@@ -22,7 +22,7 @@ This demo creates a basic Azure Databricks workspace with the minimum required r
 1. **Azure CLI** installed and authenticated:
    ```bash
    az login
-   az account set --subscription edd4cc45-85c7-4aec-8bf5-648062d519bf
+   az account set --subscription <subscription_id>
    ```
 
 2. **Terraform** installed (version ~> 1.9):

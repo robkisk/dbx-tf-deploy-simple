@@ -4,8 +4,8 @@ This document tracks the completion status of each deployment step for the simpl
 
 ## Deployment Configuration
 
-- **Azure Tenant ID**: bf465dc7-3bc8-4944-b018-092572b5c20d
-- **Azure Subscription ID**: edd4cc45-85c7-4aec-8bf5-648062d519bf
+- **Azure Tenant ID**: <tenant_id>
+- **Azure Subscription ID**: <subscription_id>
 - **Region**: US East 2 (eastus2)
 
 ---
@@ -114,7 +114,7 @@ After successful deployment:
 4. **Verify Role Assignment**:
    ```bash
    az role assignment list \
-     --scope /subscriptions/edd4cc45-85c7-4aec-8bf5-648062d519bf/resourceGroups/databricks-eus2-robkisk-rg-tf/providers/Microsoft.Storage/storageAccounts/storaccrobkisktf
+     --scope /subscriptions/<subscription_id>/resourceGroups/databricks-eus2-robkisk-rg-tf/providers/Microsoft.Storage/storageAccounts/storaccrobkisktf
    ```
 
 5. **Verify Databricks Workspace**:

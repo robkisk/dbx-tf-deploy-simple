@@ -4,11 +4,11 @@ terraform {
   required_providers {
     azurerm = {
       source  = "hashicorp/azurerm"
-      version = "~>4.9"
+      version = "~>4.46"
     }
     databricks = {
       source  = "databricks/databricks"
-      version = "~>1.81"
+      version = "~>1.111"
     }
   }
 }
@@ -19,6 +19,23 @@ provider "azurerm" {
   tenant_id       = var.tenant_id
 }
 
+# Account-level provider for metastore operations
 provider "databricks" {
-  host = "https://${azurerm_databricks_workspace.this.workspace_url}"
+  alias           = "accounts"
+  host            = "https://accounts.azuredatabricks.net"
+  account_id      = var.databricks_account_id
+  azure_tenant_id = var.tenant_id
+}
+
+# Workspace-level provider for dev workspace
+provider "databricks" {
+  host            = "https://${azurerm_databricks_workspace.this.workspace_url}"
+  azure_tenant_id = var.tenant_id
+}
+
+# Workspace-level provider for prod workspace
+provider "databricks" {
+  alias           = "prod"
+  host            = "https://${azurerm_databricks_workspace.prod.workspace_url}"
+  azure_tenant_id = var.tenant_id
 }

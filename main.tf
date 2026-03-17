@@ -81,34 +81,12 @@ resource "azurerm_databricks_workspace" "prod" {
 
 # ─── Unity Catalog ────────────────────────────────────────────────────────────
 
-# Step 6: Create container for metastore managed storage
-resource "azurerm_storage_container" "metastore" {
-  name                  = "unity-catalog"
-  storage_account_id    = azurerm_storage_account.this.id
-  container_access_type = "private"
-}
-
-# Step 7: Create Unity Catalog Metastore
+# Step 6: Create Unity Catalog Metastore (no storage_root — set at catalog level instead)
 resource "databricks_metastore" "this" {
-  provider = databricks.accounts
-  name     = "${var.workspace_name}-metastore"
-  storage_root = format("abfss://%s@%s.dfs.core.windows.net/",
-    azurerm_storage_container.metastore.name,
-    azurerm_storage_account.this.name
-  )
+  provider      = databricks.accounts
+  name          = "${var.workspace_name}-metastore"
   region        = var.location
   force_destroy = true
-}
-
-# Step 7b: Configure root storage credential for the metastore
-resource "databricks_metastore_data_access" "this" {
-  provider     = databricks.accounts
-  metastore_id = databricks_metastore.this.id
-  name         = "metastore-root-credential"
-  azure_managed_identity {
-    access_connector_id = azurerm_databricks_access_connector.this.id
-  }
-  is_default = true
 }
 
 # Step 8: Assign Metastore to Workspaces
@@ -156,8 +134,12 @@ resource "databricks_catalog" "dev" {
   name          = var.catalog_name_dev
   force_destroy = true
   comment       = "Dev catalog - managed by Terraform"
+  storage_root = format("abfss://%s@%s.dfs.core.windows.net/",
+    azurerm_storage_container.containers["dev"].name,
+    azurerm_storage_account.this.name
+  )
 
-  depends_on = [databricks_metastore_assignment.this]
+  depends_on = [databricks_metastore_assignment.this, databricks_storage_credential.this]
 }
 
 resource "databricks_catalog" "prod" {
@@ -165,8 +147,12 @@ resource "databricks_catalog" "prod" {
   name          = var.catalog_name_prod
   force_destroy = true
   comment       = "Prod catalog - managed by Terraform"
+  storage_root = format("abfss://%s@%s.dfs.core.windows.net/",
+    azurerm_storage_container.containers["prod"].name,
+    azurerm_storage_account.this.name
+  )
 
-  depends_on = [databricks_metastore_assignment.prod]
+  depends_on = [databricks_metastore_assignment.prod, databricks_storage_credential.this]
 }
 
 # Step 12: Create schemas within each catalog

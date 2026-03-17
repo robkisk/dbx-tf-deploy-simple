@@ -85,12 +85,14 @@ output "metastore_id" {
   value       = databricks_metastore.this.id
 }
 
-output "metastore_storage_root" {
-  description = "Storage root of the metastore for managed tables"
-  value = format("abfss://%s@%s.dfs.core.windows.net/",
-    azurerm_storage_container.metastore.name,
-    azurerm_storage_account.this.name
-  )
+output "catalog_storage_root_dev" {
+  description = "Storage root of the dev catalog for managed tables"
+  value       = databricks_catalog.dev.storage_root
+}
+
+output "catalog_storage_root_prod" {
+  description = "Storage root of the prod catalog for managed tables"
+  value       = databricks_catalog.prod.storage_root
 }
 
 output "storage_credential_name" {

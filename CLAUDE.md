@@ -22,8 +22,8 @@ This project deploys **two Azure Databricks workspaces** (dev + prod) with share
 **Three-tier Databricks provider** pattern:
 
 - **`databricks.accounts`** (aliased) -- points at `accounts.azuredatabricks.net` for account-level operations: metastore, SP, OIDC, workspace assignments.
-- **Default `databricks`** (no alias) -- points at the dev workspace URL for workspace-level UC objects and dev SQL warehouse.
-- **`databricks.prod`** (aliased) -- points at the prod workspace URL for prod SQL warehouse.
+- **Default `databricks`** (no alias) -- points at the dev workspace URL for UC objects, dev catalog/schema/grants, dev SQL warehouse, dev git credential/repo.
+- **`databricks.prod`** (aliased) -- points at the prod workspace URL for prod catalog/schema/grants, prod SQL warehouse, prod git credential/repo.
 
 All Databricks providers set `azure_tenant_id` explicitly to avoid tenant mismatch when authenticating via Azure CLI.
 
@@ -43,21 +43,22 @@ Resource Group
                               --> Metastore Assignment (prod workspace)
 
 [workspace-level provider - dev]
-  Storage Credential --> External Locations (dev, prod via for_each)
+  Storage Credential --> External Locations (dev, prod via for_each, force_destroy)
   Catalog (bu1_dev, storage_root=dev container) --> Schema (devx_workshop)
   Grants (catalog + schema for CI/CD SP)
   SQL Warehouse (wh-demo-dev, serverless)
-  Git Repo (dbx-devx-workshop clone)
+  Git Credential --> Git Repo (dbx-devx-workshop clone)
 
 [workspace-level provider - prod]
   Catalog (bu1_prod, storage_root=prod container) --> Schema (devx_workshop)
   Grants (catalog + schema for CI/CD SP)
   SQL Warehouse (wh-demo-prod, serverless)
-  Git Repo (dbx-devx-workshop clone)
+  Git Credential --> Git Repo (dbx-devx-workshop clone)
 
 [account-level provider - CI/CD]
   Service Principal --> Workspace Assignments (dev, prod)
-                   --> OIDC Federation Policies (env:dev, env:prod, branch, PR)
+    --> time_sleep (30s propagation delay)
+      --> OIDC Federation Policies (serialized: env:dev -> env:prod -> branch -> PR)
 
 [github provider]
   Environments (dev, prod)
@@ -70,11 +71,11 @@ Resource Group
 Implicit dependencies (attribute references) handle ordering everywhere except these hidden dependency cases:
 
 - **`databricks_storage_credential` depends_on `databricks_metastore_assignment.this`** -- workspace must have a metastore before creating UC objects.
-- **`databricks_sql_endpoint.dev` depends_on `databricks_metastore_assignment.this`** -- warehouse needs UC attached.
-- **`databricks_sql_endpoint.prod` depends_on `databricks_metastore_assignment.prod`** -- same for prod.
-- **`databricks_catalog.*` depends_on `databricks_metastore_assignment.*` and `databricks_storage_credential.this`** -- catalogs need metastore assigned and credential available for storage_root.
+- **`databricks_sql_endpoint.*` depends_on `databricks_metastore_assignment.*`** -- warehouse needs UC attached.
+- **`databricks_catalog.*` depends_on `databricks_external_location.this`** -- catalogs need external locations (which transitively need metastore assignment + storage credential).
 - **`databricks_grants.catalog_*` depends_on `databricks_mws_permission_assignment.cicd_*`** -- SP must be assigned to workspace before granting privileges.
-- **`databricks_repo.*` depends_on `databricks_metastore_assignment.*`** -- git folders need workspace ready.
+- **`databricks_repo.*` depends_on `databricks_git_credential.*`** -- git folders need credentials configured first.
+- **OIDC federation policies** are chained sequentially (`env_dev` -> `env_prod` -> `branch` -> `pr`) with a 30s `time_sleep` before the first, to avoid concurrent creation failures on the Databricks account API.
 
 Do not add `depends_on` elsewhere unless there is a similar hidden dependency with no attribute-level link.
 
@@ -85,11 +86,12 @@ The metastore has **no `storage_root`** — storage is defined at the catalog le
 ## Project layout
 
 ```
-providers.tf    -- terraform/provider blocks, version constraints
-variables.tf    -- all input variables (with validation on storage_account_name)
-main.tf         -- all resources, sequenced by step comments
-outputs.tf      -- resource IDs, names, URLs, external location map
+providers.tf     -- terraform/provider blocks, version constraints
+variables.tf     -- all input variables (with validation on storage_account_name)
+main.tf          -- all resources, sequenced by step comments (Steps 1-22)
+outputs.tf       -- resource IDs, names, URLs, SP application ID
 terraform.tfvars -- variable values (gitignored, contains Azure/Databricks IDs)
+.env             -- exports GITHUB_TOKEN from gh auth (gitignored)
 ```
 
 ## Sensitive data
@@ -98,7 +100,7 @@ terraform.tfvars -- variable values (gitignored, contains Azure/Databricks IDs)
 
 ## Provider versions
 
-Pinned with pessimistic constraints: `azurerm ~>4.46`, `databricks ~>1.111`, `github ~>6.11`, Terraform `~>1.9`.
+Pinned with pessimistic constraints: `azurerm ~>4.46`, `databricks ~>1.111`, `github ~>6.11`, `time` (hashicorp, auto-versioned), Terraform `~>1.9`.
 
 ## Destroy/recreate notes
 

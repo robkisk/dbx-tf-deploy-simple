@@ -34,7 +34,8 @@ Terraform configuration that deploys two Azure Databricks workspaces (dev + prod
 - `wh-demo-dev` -- serverless SQL warehouse in dev workspace
 - `wh-demo-prod` -- serverless SQL warehouse in prod workspace
 
-### Git Repo Integration
+### Git Integration
+- Git credentials configured in both workspaces (uses `GITHUB_TOKEN`)
 - `dbx-devx-workshop` cloned into `/Repos/robkisk/dbx-devx-workshop` in both workspaces
 
 ### GitHub Actions Configuration
@@ -86,6 +87,7 @@ variables.tf     -- Input variables (with validation on storage_account_name)
 main.tf          -- All resources, sequenced by step comments (Steps 1-22)
 outputs.tf       -- Resource IDs, names, URLs, SP application ID
 terraform.tfvars -- Variable values (gitignored)
+.env             -- Exports GITHUB_TOKEN from gh auth (gitignored)
 ```
 
 ## Cleanup
@@ -102,3 +104,4 @@ The metastore has `force_destroy = true` -- this cascades deletion through all c
 - azurerm: `~>4.46`
 - databricks: `~>1.111`
 - github: `~>6.11`
+- time: (hashicorp, auto-versioned)

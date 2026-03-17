@@ -53,3 +53,35 @@ variable "tags" {
   description = "Tags to apply to all resources"
   default     = {}
 }
+
+# ─── CI/CD & Unity Catalog Variables ──────────────────────────────────────────
+
+variable "github_repo" {
+  type        = string
+  description = "GitHub repository in 'owner/repo' format for OIDC federation"
+  default     = "robkisk/dbx-devx-workshop"
+}
+
+variable "catalog_name_dev" {
+  type        = string
+  description = "Unity Catalog name for dev environment"
+  default     = "bu1_dev"
+}
+
+variable "catalog_name_prod" {
+  type        = string
+  description = "Unity Catalog name for prod environment"
+  default     = "bu1_prod"
+}
+
+variable "schema_name" {
+  type        = string
+  description = "Schema name within catalogs"
+  default     = "devx_workshop"
+}
+
+variable "cicd_sp_display_name" {
+  type        = string
+  description = "Display name for the CI/CD service principal"
+  default     = "sp-robkisk-devx-workshop-cicd"
+}

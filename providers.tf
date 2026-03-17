@@ -10,6 +10,10 @@ terraform {
       source  = "databricks/databricks"
       version = "~>1.111"
     }
+    github = {
+      source  = "integrations/github"
+      version = "~>6.11"
+    }
   }
 }
 
@@ -31,6 +35,12 @@ provider "databricks" {
 provider "databricks" {
   host            = "https://${azurerm_databricks_workspace.this.workspace_url}"
   azure_tenant_id = var.tenant_id
+}
+
+# GitHub provider for managing Actions secrets/variables
+# Authenticates via GITHUB_TOKEN env var
+provider "github" {
+  owner = local.github_owner
 }
 
 # Workspace-level provider for prod workspace

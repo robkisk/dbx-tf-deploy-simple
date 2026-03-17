@@ -105,6 +105,35 @@ output "external_locations" {
   }
 }
 
+# ─── Catalog & Schema Outputs ─────────────────────────────────────────────────
+
+output "catalog_name_dev" {
+  description = "Name of the dev Unity Catalog"
+  value       = databricks_catalog.dev.name
+}
+
+output "catalog_name_prod" {
+  description = "Name of the prod Unity Catalog"
+  value       = databricks_catalog.prod.name
+}
+
+output "schema_name" {
+  description = "Schema name used in both catalogs"
+  value       = var.schema_name
+}
+
+# ─── CI/CD Service Principal Outputs ─────────────────────────────────────────
+
+output "cicd_sp_application_id" {
+  description = "Application ID of the CI/CD service principal (use as DATABRICKS_CLIENT_ID GitHub secret)"
+  value       = databricks_service_principal.cicd.application_id
+}
+
+output "cicd_sp_id" {
+  description = "Databricks numeric ID of the CI/CD service principal"
+  value       = databricks_service_principal.cicd.id
+}
+
 # ─── SQL Warehouse Outputs ────────────────────────────────────────────────────
 
 output "sql_warehouse_dev_id" {

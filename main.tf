@@ -139,7 +139,7 @@ resource "databricks_catalog" "dev" {
     azurerm_storage_account.this.name
   )
 
-  depends_on = [databricks_metastore_assignment.this, databricks_storage_credential.this]
+  depends_on = [databricks_external_location.this]
 }
 
 resource "databricks_catalog" "prod" {
@@ -152,7 +152,7 @@ resource "databricks_catalog" "prod" {
     azurerm_storage_account.this.name
   )
 
-  depends_on = [databricks_metastore_assignment.prod, databricks_storage_credential.this]
+  depends_on = [databricks_external_location.this]
 }
 
 # Step 12: Create schemas within each catalog
@@ -325,12 +325,26 @@ resource "databricks_sql_endpoint" "prod" {
 
 # ─── Git Repo Integration ────────────────────────────────────────────────────
 
-# Step 18b: Clone workshop repo into both workspaces
+# Step 18b: Configure Git credentials (uses GITHUB_TOKEN env var automatically)
+resource "databricks_git_credential" "dev" {
+  git_username = local.github_owner
+  git_provider = "gitHub"
+  force        = true
+}
+
+resource "databricks_git_credential" "prod" {
+  provider     = databricks.prod
+  git_username = local.github_owner
+  git_provider = "gitHub"
+  force        = true
+}
+
+# Step 18c: Clone workshop repo into both workspaces
 resource "databricks_repo" "dev" {
   url  = "https://github.com/${var.github_repo}.git"
   path = "/Repos/${var.github_repo}"
 
-  depends_on = [databricks_metastore_assignment.this]
+  depends_on = [databricks_git_credential.dev]
 }
 
 resource "databricks_repo" "prod" {
@@ -338,7 +352,7 @@ resource "databricks_repo" "prod" {
   url      = "https://github.com/${var.github_repo}.git"
   path     = "/Repos/${var.github_repo}"
 
-  depends_on = [databricks_metastore_assignment.prod]
+  depends_on = [databricks_git_credential.prod]
 }
 
 # ─── GitHub Actions Configuration ─────────────────────────────────────────────

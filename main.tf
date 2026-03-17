@@ -125,6 +125,7 @@ resource "databricks_external_location" "this" {
   )
   credential_name = databricks_storage_credential.this.id
   comment         = "Managed by Terraform"
+  force_destroy   = true
 }
 
 # ─── Unity Catalog: Catalogs & Schemas ────────────────────────────────────────

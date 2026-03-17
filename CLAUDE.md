@@ -46,10 +46,25 @@ Resource Group
 
 [workspace-level provider - dev]
   Storage Credential --> External Locations (dev, prod via for_each)
+  Catalog (bu1_dev) --> Schema (devx_workshop)
+  Grants (catalog + schema for CI/CD SP)
   SQL Warehouse (wh-demo-dev, serverless)
+  Git Repo (dbx-devx-workshop clone)
 
 [workspace-level provider - prod]
+  Catalog (bu1_prod) --> Schema (devx_workshop)
+  Grants (catalog + schema for CI/CD SP)
   SQL Warehouse (wh-demo-prod, serverless)
+  Git Repo (dbx-devx-workshop clone)
+
+[account-level provider - CI/CD]
+  Service Principal --> Workspace Assignments (dev, prod)
+                   --> OIDC Federation Policies (env:dev, env:prod, branch, PR)
+
+[github provider]
+  Environments (dev, prod)
+  Secrets (DATABRICKS_CLIENT_ID, DATABRICKS_HOST per env)
+  Variables (DATABRICKS_CATALOG, DATABRICKS_SCHEMA per env)
 ```
 
 ### `depends_on` philosophy
@@ -59,6 +74,9 @@ Implicit dependencies (attribute references) handle ordering everywhere except t
 - **`databricks_storage_credential` depends_on `databricks_metastore_assignment.this`** -- workspace must have a metastore before creating UC objects.
 - **`databricks_sql_endpoint.dev` depends_on `databricks_metastore_assignment.this`** -- warehouse needs UC attached.
 - **`databricks_sql_endpoint.prod` depends_on `databricks_metastore_assignment.prod`** -- same for prod.
+- **`databricks_catalog.*` depends_on `databricks_metastore_assignment.*`** -- catalogs need metastore assigned.
+- **`databricks_grants.catalog_*` depends_on `databricks_mws_permission_assignment.cicd_*`** -- SP must be assigned to workspace before granting privileges.
+- **`databricks_repo.*` depends_on `databricks_metastore_assignment.*`** -- git folders need workspace ready.
 
 Do not add `depends_on` elsewhere unless there is a similar hidden dependency with no attribute-level link.
 
@@ -82,7 +100,15 @@ terraform.tfvars -- variable values (gitignored, contains Azure/Databricks IDs)
 
 ## Provider versions
 
-Pinned with pessimistic constraints: `azurerm ~>4.46`, `databricks ~>1.111`, Terraform `~>1.9`.
+Pinned with pessimistic constraints: `azurerm ~>4.46`, `databricks ~>1.111`, `github ~>6.11`, Terraform `~>1.9`.
+
+## Destroy/recreate notes
+
+Always use `tf destroy` before recreating — never delete Azure resources manually. The metastore, storage credential, and external locations are Databricks account-level resources that survive Azure deletion and require manual `terraform import` to recover.
+
+On destroy, `databricks_metastore_data_access` may fail because Terraform tries to delete it before the metastore. Fix: `terraform state rm databricks_metastore_data_access.this` then re-run destroy. The metastore's `force_destroy` cascades the cleanup.
+
+The GitHub provider requires a `GITHUB_TOKEN` env var for authentication.
 
 ## Terraform MCP usage
 

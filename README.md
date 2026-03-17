@@ -8,7 +8,7 @@ Terraform configuration that deploys two Azure Databricks workspaces (dev + prod
 - Resource Group
 - Databricks Access Connector (System-Assigned Managed Identity)
 - Storage Account (ADLS Gen2 with Hierarchical Namespace)
-- Storage Containers: `dev`, `prod`, `unity-catalog`
+- Storage Containers: `dev`, `prod`
 - Role Assignment (Storage Blob Data Contributor -> Access Connector)
 
 ### Databricks Workspaces
@@ -17,12 +17,11 @@ Terraform configuration that deploys two Azure Databricks workspaces (dev + prod
 - Both: Premium SKU, public network access, linked to access connector
 
 ### Unity Catalog
-- Metastore with root storage in the `unity-catalog` container
-- Metastore data access credential (access connector, `is_default = true`)
+- Metastore (no storage_root -- defined at catalog level instead)
 - Metastore assigned to both workspaces
 - Storage credential registered from the access connector
 - External locations for `dev` and `prod` containers
-- Catalogs: `bu1_dev`, `bu1_prod` (with `force_destroy`)
+- Catalogs: `bu1_dev` (storage_root=dev container), `bu1_prod` (storage_root=prod container), both with `force_destroy`
 - Schemas: `devx_workshop` in each catalog (with `force_destroy`)
 
 ### CI/CD Service Principal
@@ -61,7 +60,7 @@ Terraform configuration that deploys two Azure Databricks workspaces (dev + prod
 ## Quick Start
 
 ```bash
-export GITHUB_TOKEN=ghp_...
+source .env         # loads GITHUB_TOKEN from gh auth
 terraform init
 terraform plan
 terraform apply

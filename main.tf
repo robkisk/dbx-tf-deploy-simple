@@ -195,6 +195,12 @@ resource "databricks_mws_permission_assignment" "cicd_prod" {
   permissions  = ["USER"]
 }
 
+# Wait for SP to fully propagate before creating federation policies
+resource "time_sleep" "sp_propagation" {
+  depends_on      = [databricks_service_principal.cicd]
+  create_duration = "30s"
+}
+
 # Step 15: OIDC federation policies for GitHub Actions
 #   - environment:dev/prod — for jobs using GitHub environments
 #   - branch refs — for workflow_dispatch and push triggers
@@ -209,6 +215,7 @@ resource "databricks_service_principal_federation_policy" "github_env_dev" {
     subject       = "repo:${var.github_repo}:environment:dev"
     subject_claim = "sub"
   }
+  depends_on = [time_sleep.sp_propagation]
 }
 
 resource "databricks_service_principal_federation_policy" "github_env_prod" {
@@ -221,6 +228,7 @@ resource "databricks_service_principal_federation_policy" "github_env_prod" {
     subject       = "repo:${var.github_repo}:environment:prod"
     subject_claim = "sub"
   }
+  depends_on = [databricks_service_principal_federation_policy.github_env_dev]
 }
 
 resource "databricks_service_principal_federation_policy" "github_branch" {
@@ -233,6 +241,7 @@ resource "databricks_service_principal_federation_policy" "github_branch" {
     subject       = "repo:${var.github_repo}:ref:refs/heads/*"
     subject_claim = "sub"
   }
+  depends_on = [databricks_service_principal_federation_policy.github_env_prod]
 }
 
 resource "databricks_service_principal_federation_policy" "github_pr" {
@@ -245,6 +254,7 @@ resource "databricks_service_principal_federation_policy" "github_pr" {
     subject       = "repo:${var.github_repo}:pull_request"
     subject_claim = "sub"
   }
+  depends_on = [databricks_service_principal_federation_policy.github_branch]
 }
 
 # Step 16: Grant SP access to catalogs and schemas

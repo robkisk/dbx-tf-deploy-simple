@@ -187,6 +187,7 @@ resource "databricks_mws_permission_assignment" "cicd_dev" {
   workspace_id = azurerm_databricks_workspace.this.workspace_id
   principal_id = databricks_service_principal.cicd.id
   permissions  = ["USER"]
+  depends_on   = [databricks_metastore_assignment.this]
 }
 
 resource "databricks_mws_permission_assignment" "cicd_prod" {
@@ -194,6 +195,7 @@ resource "databricks_mws_permission_assignment" "cicd_prod" {
   workspace_id = azurerm_databricks_workspace.prod.workspace_id
   principal_id = databricks_service_principal.cicd.id
   permissions  = ["USER"]
+  depends_on   = [databricks_metastore_assignment.prod]
 }
 
 # Wait for SP to fully propagate before creating federation policies

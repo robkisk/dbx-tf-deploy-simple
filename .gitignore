@@ -57,3 +57,5 @@ terraform.rc
 mcp.json
 .claude/settings.local.json
 
+.claude/
+.cursor/mcp.json

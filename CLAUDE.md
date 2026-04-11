@@ -14,6 +14,7 @@ terraform destroy           # Tear down all resources
 ```
 
 Authentication prerequisite: `az login` with an account that has Contributor/Owner on the target subscription.
+GitHub prerequisite: `source .env` to load `GITHUB_TOKEN` (required for `apply` and `destroy`).
 
 ## Architecture
 
@@ -74,7 +75,7 @@ Implicit dependencies (attribute references) handle ordering everywhere except t
 - **`databricks_sql_endpoint.*` depends_on `databricks_metastore_assignment.*`** -- warehouse needs UC attached.
 - **`databricks_catalog.*` depends_on `databricks_external_location.this`** -- catalogs need external locations (which transitively need metastore assignment + storage credential).
 - **`databricks_mws_permission_assignment.cicd_*` depends_on `databricks_metastore_assignment.*`** -- account-level permission API requires the workspace to be fully registered; metastore assignment acts as a gate.
-- **`databricks_grants.catalog_*` depends_on `databricks_mws_permission_assignment.cicd_*`** -- SP must be assigned to workspace before granting privileges.
+- **`databricks_grants.catalog_*` / `databricks_grants.schema_*` depends_on `databricks_mws_permission_assignment.cicd_*`** -- SP must be assigned to workspace before granting privileges.
 - **`databricks_repo.*` depends_on `databricks_git_credential.*`** -- git folders need credentials configured first.
 - **OIDC federation policies** are chained sequentially (`env_dev` -> `env_prod` -> `branch` -> `pr`) with a 30s `time_sleep` before the first, to avoid concurrent creation failures on the Databricks account API.
 
@@ -108,6 +109,7 @@ Pinned with pessimistic constraints: `azurerm ~>4.46`, `databricks ~>1.111`, `gi
 Always use `tf destroy` before recreating — never delete Azure resources manually. The metastore, storage credential, and external locations are Databricks account-level resources that survive Azure deletion and require manual `terraform import` to recover.
 
 The GitHub provider requires a `GITHUB_TOKEN` env var. Source from `.env` before running: `source .env && tf apply`.
+If you switch GitHub accounts (`gh auth switch`), regenerate `.env` first: `echo "export GITHUB_TOKEN=$(gh auth token)" > .env`.
 
 ## Terraform MCP usage
 

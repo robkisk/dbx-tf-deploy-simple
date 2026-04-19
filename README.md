@@ -105,3 +105,17 @@ The metastore has `force_destroy = true` -- this cascades deletion through all c
 - databricks: `~>1.111`
 - github: `~>6.11`
 - time: (hashicorp, auto-versioned)
+
+## DAIS26 demo assets (optional)
+
+This repo also provisions the MCP/Skills demo surface used by the DAIS26 course (`bu1_dev.mcp_demo` schema, SDP pipeline, Vector Search, Lakebase, custom MCP app, AI Gateway, Genie space). Enable with:
+
+```bash
+echo 'enable_dais26_demos = true' >> terraform.tfvars
+./run.sh                          # full deploy (uses native Databricks FM, no API key needed)
+./run.sh --dry-run                # terraform plan only
+./run.sh --skip-tf                # bootstrap-only
+./run.sh --dais26-repo <path>     # override DAIS26 repo location
+```
+
+See [`CLAUDE.md`](CLAUDE.md) (`## DAIS26 demo assets`) for full layout, bootstrap script responsibilities, the two-phase apply rationale, and known risks.

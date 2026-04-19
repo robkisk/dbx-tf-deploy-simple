@@ -1,0 +1,67 @@
+"""Databricks Foundation Model: MLflow tracing + evaluation demo.
+
+Traces calls to a native Databricks Claude endpoint via the Databricks SDK and
+evaluates outputs with MLflow GenAI scorers. No external API key needed —
+billing flows through the Databricks enterprise plan, auth through the
+databricks-cli profile.
+
+Run:
+  uv run python gateway/ai-gateway-tracing.py
+"""
+
+import mlflow
+from databricks.sdk import WorkspaceClient
+from mlflow.genai.scorers import Guidelines, RelevanceToQuery, Safety
+
+
+MODEL = '${gateway_endpoint_name}'
+
+
+mlflow.set_tracking_uri('databricks')
+mlflow.set_experiment('/Shared/ai-gateway-tracing-demo')
+
+
+w = WorkspaceClient()
+
+
+@mlflow.trace
+def predict(question: str) -> str:
+  """Send a question to the Databricks Foundation Model endpoint and return text."""
+  response = w.serving_endpoints.query(
+    name=MODEL,
+    messages=[{'role': 'user', 'content': question}],
+    max_tokens=1024,
+  )
+  return response.choices[0].message.content
+
+
+if __name__ == '__main__':
+  answer = predict('What is Databricks?')
+  print(f'Response: {answer}\n')
+
+  eval_data = [
+    {'inputs': {'question': 'What is Databricks?'}},
+    {'inputs': {'question': 'What are Databricks Foundation Models?'}},
+    {'inputs': {'question': 'How does Unity Catalog work?'}},
+  ]
+
+  results = mlflow.genai.evaluate(
+    data=eval_data,
+    predict_fn=predict,
+    scorers=[
+      RelevanceToQuery(),
+      Safety(),
+      Guidelines(
+        name='concise_and_accurate',
+        guidelines=(
+          'The response must be factually accurate about Databricks'
+          ' and under 200 words.'
+        ),
+      ),
+    ],
+  )
+
+  print(results.tables['eval_results'])
+
+  # MLflow tracking threads can hang after evaluate() — force exit.
+  raise SystemExit(0)

@@ -131,3 +131,59 @@ When adding or modifying resources, always use the Terraform MCP server to valid
 3. **Check capabilities**: Use `get_provider_capabilities` when unsure what resource types exist for a given provider.
 
 This two-source approach (Terraform registry via MCP + Context7 source docs) catches deprecated arguments, new required fields, and Azure-specific patterns that a single source might miss.
+
+## DAIS26 demo assets
+
+The DAIS26 course workspace (MCP/Skills demos over `bu1_dev.mcp_demo`) is wired in via `demos.tf` + `bootstrap/`. Everything is gated on `var.enable_dais26_demos = true`; leaving it false is a no-op so this config is safe to keep in-repo on workspaces that don't need it.
+
+### One-shot deploy
+
+```bash
+# 1. Opt in. Gateway now uses a pre-deployed native Databricks FM endpoint
+#    (default: databricks-claude-opus-4-7) — no API key needed. Override via
+#    var.gateway_model_name if a different FM is desired.
+echo 'enable_dais26_demos = true' >> terraform.tfvars
+
+# 2. Apply + bootstrap in one go (two-phase apply handled by run.sh).
+./run.sh
+
+# Alternative flags:
+./run.sh --dry-run                               # terraform plan only
+./run.sh --skip-tf                               # bootstrap-only
+./run.sh --dais26-repo /alt/path/to/dais26       # override TF var
+```
+
+### Layout
+
+```
+demos.tf                          -- All DAIS26 TF resources (count-gated)
+bootstrap/
+  _lib.sh                         -- Shared helpers, loads `terraform output -json` into env vars
+  01_seed_tables.sh               -- Seeds bu1_dev.mcp_demo base tables via aitools CLI
+  02_uc_functions.sh              -- Creates UC functions (avg_fare_by_borough, top_zones, trip_summary)
+  03_trigger_pipeline.sh          -- Kicks off the SDP pipeline created by TF
+  04_lakebase_db.py               -- CREATE DATABASE inside the Lakebase instance (psycopg + OAuth)
+  05_app_deploy.sh                -- `databricks sync` + `databricks apps deploy` for custom-mcp
+  06_genie_space.py               -- Creates/reuses the Genie space, writes .genie_space_id
+  07_rewrite_config.py            -- Renders .mcp.json + gateway files into the DAIS26 repo from TF outputs
+  08_smoke_test.sh                -- 5-point smoke test (dbsql, UC func, VS, custom-mcp, gateway)
+  sql/                            -- SDP source SQL (pushed to workspace by databricks_notebook)
+  templates/                      -- .mcp.json + gateway tftpl templates
+run.sh                            -- Orchestrator (two-phase TF apply + bootstrap/*)
+```
+
+### Why a two-phase apply
+
+`databricks_vector_search_index.zone_descriptions` binds to a source Delta table that TF does not own. `run.sh` target-applies `databricks_schema.mcp_demo` + `databricks_sql_endpoint.dev`, then runs `01_seed_tables.sh` to materialize `zone_descriptions` (with CDF enabled), then runs the full `terraform apply` so the VS index's dependency is satisfied.
+
+### Generated files in the DAIS26 repo
+
+`bootstrap/07_rewrite_config.py` overwrites these files in `$DAIS26_REPO` — do NOT hand-edit them (any changes will be clobbered on the next deploy):
+
+- `.mcp.json` — MCP server config (warehouse ID, Genie space ID, catalog/schema, custom-mcp URL, lakebase instance/db)
+- `gateway/ai-gateway-anthropic.py` — rendered from `templates/gateway-anthropic.py.tftpl`; Databricks SDK `serving_endpoints.query` against the native FM endpoint name
+- `gateway/ai-gateway-tracing.py` — rendered from `templates/gateway-tracing.py.tftpl`; same native-FM pattern wrapped in `@mlflow.trace` + `mlflow.genai.evaluate`
+
+### Known risks surfaced during migration
+
+Documented in the plan at `/Users/robby.kiskanyan/.claude/plans/dbx-tf-deploy-simple-dais26-integration.md` (Gotchas section). Summary: SP UUID vs display-name in GRANTs, app warehouse access via Permissions API, `user_api_scopes` preview flag, gateway swapped to native Databricks FM (no external API key, no shard-URL assumption), manual Lakebase CREATE DATABASE, Genie SDK surface drift.

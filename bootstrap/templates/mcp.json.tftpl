@@ -1,0 +1,111 @@
+{
+  "mcpServers": {
+    "context7": {
+      "command": "npx",
+      "args": ["-y", "@upstash/context7-mcp"]
+    },
+    "serena": {
+      "command": "serena",
+      "args": [
+        "start-mcp-server",
+        "--context",
+        "claude-code",
+        "--project-from-cwd"
+      ]
+    },
+    "terraform": {
+      "command": "/Users/robby.kiskanyan/go/bin/terraform-mcp-server",
+      "args": ["stdio"]
+    },
+    "ai-dev-kit": {
+      "command": "/Users/robby.kiskanyan/dev/mcp/mcp-configs/.venv/bin/python",
+      "args": [
+        "/Users/robby.kiskanyan/dev/aitools/gold-ctx/ai-dev-kit.fix-lakebase-provisioned-create/databricks-mcp-server/run_server.py"
+      ],
+      "env": {
+        "DATABRICKS_CONFIG_PROFILE": "${databricks_profile}"
+      }
+    },
+    "dbx-local-dev": {
+      "command": "uv",
+      "args": [
+        "--directory",
+        "/Users/robby.kiskanyan/dev/mcp/projects/demos/databricks-mcp",
+        "run",
+        "databricks-mcp-server"
+      ],
+      "env": {
+        "DATABRICKS_CONFIG_PROFILE": "${databricks_profile}",
+        "DATABRICKS_WAREHOUSE_ID": "${warehouse_id}",
+        "RUNNING_VIA_CURSOR_MCP": "true"
+      }
+    },
+    "genie-dev": {
+      "command": "/Users/robby.kiskanyan/dev/mcp/mcp-configs/.venv/bin/python",
+      "args": [
+        "./scripts/mcp_proxy.py",
+        "--path",
+        "/api/2.0/mcp/genie/${genie_space_id}",
+        "--profile",
+        "${databricks_profile}"
+      ]
+    },
+    "ucfunc-dev": {
+      "command": "/Users/robby.kiskanyan/dev/mcp/mcp-configs/.venv/bin/python",
+      "args": [
+        "./scripts/mcp_proxy.py",
+        "--path",
+        "/api/2.0/mcp/functions/${catalog}/${schema}",
+        "--profile",
+        "${databricks_profile}"
+      ]
+    },
+    "vs-dev": {
+      "command": "/Users/robby.kiskanyan/dev/mcp/mcp-configs/.venv/bin/python",
+      "args": [
+        "./scripts/mcp_proxy.py",
+        "--path",
+        "/api/2.0/mcp/vector-search/${catalog}/${schema}",
+        "--profile",
+        "${databricks_profile}"
+      ]
+    },
+    "dbsql-dev": {
+      "command": "/Users/robby.kiskanyan/dev/mcp/mcp-configs/.venv/bin/python",
+      "args": [
+        "./scripts/mcp_proxy.py",
+        "--path",
+        "/api/2.0/mcp/sql",
+        "--profile",
+        "${databricks_profile}"
+      ]
+    },
+    "custom-mcp-app": {
+      "command": "/Users/robby.kiskanyan/dev/mcp/mcp-configs/.venv/bin/python",
+      "args": [
+        "./scripts/mcp_proxy.py",
+        "--server-url",
+        "${custom_mcp_url}/mcp",
+        "--profile",
+        "${databricks_profile}"
+      ]
+    },
+    "lakebase-postgres": {
+      "command": "uv",
+      "args": [
+        "run",
+        "python",
+        "./scripts/lakebase-mcp.py"
+      ],
+      "env": {
+        "DATABRICKS_CONFIG_PROFILE": "${databricks_profile}",
+        "LAKEBASE_INSTANCE": "${lakebase_instance}",
+        "LAKEBASE_DATABASE": "${lakebase_database}"
+      }
+    },
+    "databricks-sdk-py Docs": {
+      "command": "npx",
+      "args": ["mcp-remote", "https://gitmcp.io/databricks/databricks-sdk-py"]
+    }
+  }
+}

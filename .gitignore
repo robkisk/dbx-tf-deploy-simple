@@ -61,3 +61,7 @@ mcp.json
 .cursor/mcp.json
 .serena/
 .cursor/skills/
+
+# DAIS26 bootstrap artifacts — generated locally, not committed.
+.genie_space_id
+bootstrap/__pycache__/

@@ -1,0 +1,28 @@
+"""Databricks Foundation Model demo — native Claude endpoint via Databricks SDK.
+
+Queries a pre-deployed Databricks Claude endpoint (e.g. databricks-claude-opus-4-7).
+No external API key required — auth flows through the active databricks-cli
+profile, so the same PAT/OAuth that runs the rest of the demo stack.
+
+Run:
+  uv run python gateway/ai-gateway-anthropic.py
+"""
+
+from databricks.sdk import WorkspaceClient
+
+
+MODEL = '${gateway_endpoint_name}'
+
+w = WorkspaceClient()
+
+response = w.serving_endpoints.query(
+  name=MODEL,
+  messages=[
+    {'role': 'user', 'content': 'Hello!'},
+    {'role': 'assistant', 'content': 'Hello! How can I assist you today?'},
+    {'role': 'user', 'content': 'What is Databricks?'},
+  ],
+  max_tokens=1024,
+)
+
+print(response.choices[0].message.content)

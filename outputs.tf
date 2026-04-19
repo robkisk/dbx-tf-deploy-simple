@@ -153,3 +153,78 @@ output "sql_warehouse_prod_id" {
   description = "ID of the prod SQL warehouse"
   value       = databricks_sql_endpoint.prod.id
 }
+
+# ─── DAIS26 MCP Demo Outputs ──────────────────────────────────────────────────
+# All outputs use try() so disabling demos does not break `terraform output`.
+# Consumed by bootstrap/07_rewrite_config.py to render .mcp.json and gateway
+# config files in the DAIS26 repo.
+
+output "dais26_enabled" {
+  description = "Whether DAIS26 demo assets are materialized"
+  value       = var.enable_dais26_demos
+}
+
+output "dais26_workspace_host" {
+  description = "Workspace host (without trailing slash) for DAIS26 bootstrap scripts"
+  value       = "https://${azurerm_databricks_workspace.this.workspace_url}"
+}
+
+output "mcp_demo_schema_full" {
+  description = "Fully qualified schema name holding DAIS26 demo tables"
+  value       = try(local.mcp_demo_schema_full, "")
+}
+
+output "sdp_pipeline_id" {
+  description = "SDP pipeline ID (use with databricks pipelines start-update to trigger)"
+  value       = try(databricks_pipeline.mcp_demo[0].id, "")
+}
+
+output "vs_endpoint_name" {
+  description = "Vector Search endpoint name"
+  value       = try(databricks_vector_search_endpoint.mcp_demo[0].name, "")
+}
+
+output "vs_index_name" {
+  description = "Vector Search index full name (catalog.schema.index)"
+  value       = try(databricks_vector_search_index.zone_descriptions[0].name, "")
+}
+
+output "lakebase_instance_name" {
+  description = "Lakebase instance name (for databricks lakebase CLI)"
+  value       = try(databricks_database_instance.mcp_demo[0].name, "")
+}
+
+output "lakebase_host" {
+  description = "Lakebase read-write DNS endpoint (for psycopg connections in bootstrap)"
+  value       = try(databricks_database_instance.mcp_demo[0].read_write_dns, "")
+}
+
+output "lakebase_database_name" {
+  description = "PG database name inside the Lakebase instance (created by bootstrap, not TF)"
+  value       = var.lakebase_database_name
+}
+
+output "custom_mcp_app_url" {
+  description = "Custom MCP app base URL — append /mcp for the MCP endpoint"
+  value       = try(databricks_app.custom_mcp[0].url, "")
+}
+
+output "custom_mcp_sp_client_id" {
+  description = "Custom MCP app service principal client_id UUID (use in GRANT statements)"
+  value       = try(databricks_app.custom_mcp[0].service_principal_client_id, "")
+}
+
+output "gateway_endpoint_name" {
+  description = "Databricks-hosted Claude Foundation Model endpoint name (pre-deployed by Databricks, not managed by TF)"
+  value       = var.gateway_model_name
+}
+
+output "gateway_base_url" {
+  description = "Base URL for the Foundation Model endpoint. Use for curl/REST probes (POST /invocations) and as a reference in the gateway demo scripts."
+  value       = "https://${azurerm_databricks_workspace.this.workspace_url}/serving-endpoints/${var.gateway_model_name}"
+}
+
+output "dais26_repo_path" {
+  description = "Local path to the DAIS26 repo — bootstrap scripts use this to locate seed SQL and write config files"
+  value       = var.dais26_repo_path
+}

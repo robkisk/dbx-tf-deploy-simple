@@ -27,13 +27,14 @@ resource "azurerm_databricks_access_connector" "this" {
 
 # Step 3: Create Storage Account with Hierarchical Namespace
 resource "azurerm_storage_account" "this" {
-  name                     = var.storage_account_name
-  resource_group_name      = azurerm_resource_group.this.name
-  location                 = azurerm_resource_group.this.location
-  tags                     = local.tags
-  account_tier             = "Standard"
-  account_replication_type = "LRS"
-  is_hns_enabled           = true
+  name                            = var.storage_account_name
+  resource_group_name             = azurerm_resource_group.this.name
+  location                        = azurerm_resource_group.this.location
+  tags                            = local.tags
+  account_tier                    = "Standard"
+  account_replication_type        = "LRS"
+  is_hns_enabled                  = true
+  allow_nested_items_to_be_public = false
 }
 
 # Step 3b: Create Storage Containers

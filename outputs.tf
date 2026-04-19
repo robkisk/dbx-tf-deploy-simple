@@ -136,6 +136,12 @@ output "cicd_sp_id" {
   value       = databricks_service_principal.cicd.id
 }
 
+output "databricks_account_id" {
+  description = "Databricks account ID (for federation policy API calls in verify.sh)"
+  value       = var.databricks_account_id
+  sensitive   = true
+}
+
 # ─── SQL Warehouse Outputs ────────────────────────────────────────────────────
 
 output "sql_warehouse_dev_id" {

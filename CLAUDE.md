@@ -85,6 +85,15 @@ Do not add `depends_on` elsewhere unless there is a similar hidden dependency wi
 
 The metastore has **no `storage_root`** — storage is defined at the catalog level instead (recommended pattern per Databricks docs). Each catalog points to its own container (`dev` or `prod`) via `storage_root`. This eliminates the need for `databricks_metastore_data_access` and avoids the destroy ordering issue where that resource couldn't be deleted before its parent metastore.
 
+### Drift gotchas
+
+- `azurerm_storage_account` must pin `allow_nested_items_to_be_public = false` — Azure tenant policy forces `false` post-create; unset field defaults to `true` and produces perpetual drift.
+- `./verify.sh` requires `.env` sourced (auto-handled inside script) — missing `GITHUB_TOKEN` makes `terraform plan -detailed-exitcode` return 2, misreported as drift.
+
+### Scope: serverless-only demos
+
+Bundle demos use serverless pipelines, serverless SQL warehouses, and pipeline-task jobs exclusively. Do not add `databricks_entitlements` (e.g., `allow-cluster-create`) — not needed, and `USER` permission assignment gives implicit workspace-access.
+
 ## Project layout
 
 ```
@@ -99,6 +108,8 @@ terraform.tfvars -- variable values (gitignored, contains Azure/Databricks IDs)
 ## Sensitive data
 
 `.gitignore` excludes `*.tfstate`, `*.tfstate.*`, `*.tfvars`, `*.tfvars.json`, `.env`, and plan output files. Never commit these. `terraform.tfvars` is gitignored and contains sandbox/demo Azure and Databricks IDs.
+
+For values needed by post-apply scripts (e.g., `verify.sh`), add a `sensitive = true` output and read via `terraform output -json` + `jq`. Never hardcode UUIDs or IDs directly in scripts checked into git — `terraform.tfvars` and state are gitignored, outputs are the canonical source.
 
 ## Provider versions
 

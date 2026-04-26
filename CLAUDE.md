@@ -11,10 +11,18 @@ terraform validate          # Syntax and reference check (run after init)
 terraform plan              # Preview changes
 terraform apply             # Deploy (requires interactive 'yes' confirmation)
 terraform destroy           # Tear down all resources
+./verify.sh                 # Post-apply check: state / Azure / Databricks / GitHub / OIDC
 ```
 
 Authentication prerequisite: `az login` with an account that has Contributor/Owner on the target subscription.
 GitHub prerequisite: `source .env` to load `GITHUB_TOKEN` (required for `apply` and `destroy`).
+
+## First-run setup
+
+`terraform.tfvars` is gitignored and must be created before `terraform plan`. Required variables (no defaults in `variables.tf`):
+`tenant_id`, `subscription_id`, `resource_group_name`, `location`, `access_connector_name`, `storage_account_name`, `workspace_name`, `workspace_name_prod`, `databricks_account_id`. Defaults exist for `github_repo`, `catalog_name_dev`, `catalog_name_prod`, `schema_name`, `cicd_sp_display_name`, `tags`.
+
+`.env` is created via `echo "export GITHUB_TOKEN=$(gh auth token)" > .env` after `gh auth login`.
 
 ## Architecture
 
@@ -109,15 +117,15 @@ terraform.tfvars -- variable values (gitignored, contains Azure/Databricks IDs)
 
 `.gitignore` excludes `*.tfstate`, `*.tfstate.*`, `*.tfvars`, `*.tfvars.json`, `.env`, and plan output files. Never commit these. `terraform.tfvars` is gitignored and contains sandbox/demo Azure and Databricks IDs.
 
-For values needed by post-apply scripts (e.g., `verify.sh`), add a `sensitive = true` output and read via `terraform output -json` + `jq`. Never hardcode UUIDs or IDs directly in scripts checked into git — `terraform.tfvars` and state are gitignored, outputs are the canonical source.
+Post-apply scripts (e.g., `verify.sh`) read values via `terraform output -json | jq` against `sensitive = true` outputs. Never hardcode UUIDs in committed scripts — `terraform.tfvars` and state are gitignored, outputs are the canonical source.
 
 ## Provider versions
 
-Pinned with pessimistic constraints: `azurerm ~>4.46`, `databricks ~>1.111`, `github ~>6.11`, `time` (hashicorp, auto-versioned), Terraform `~>1.9`.
+Pinned with pessimistic constraints: `azurerm ~>4.46`, `databricks ~>1.113`, `github ~>6.11`, `time` (hashicorp, auto-versioned), Terraform `~>1.9`.
 
 ## Destroy/recreate notes
 
-Always use `tf destroy` before recreating — never delete Azure resources manually. The metastore, storage credential, and external locations are Databricks account-level resources that survive Azure deletion and require manual `terraform import` to recover.
+Always use `tf destroy` before recreating — never delete Azure resources manually. State is local-only (no remote backend); `terraform.tfstate` in the repo root is the source of truth — back it up before risky operations. The metastore, storage credential, and external locations are Databricks account-level resources that survive Azure deletion and require manual `terraform import` to recover if state is lost.
 
 The GitHub provider requires a `GITHUB_TOKEN` env var. Source from `.env` before running: `source .env && tf apply`.
 If you switch GitHub accounts (`gh auth switch`), regenerate `.env` first: `echo "export GITHUB_TOKEN=$(gh auth token)" > .env`.

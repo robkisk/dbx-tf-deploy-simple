@@ -102,6 +102,6 @@ The metastore has `force_destroy = true` -- this cascades deletion through all c
 
 - Terraform: `~>1.9`
 - azurerm: `~>4.46`
-- databricks: `~>1.111`
+- databricks: `~>1.113`
 - github: `~>6.11`
 - time: (hashicorp, auto-versioned)

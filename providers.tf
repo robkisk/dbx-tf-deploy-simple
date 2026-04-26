@@ -8,7 +8,7 @@ terraform {
     }
     databricks = {
       source  = "databricks/databricks"
-      version = "~>1.111"
+      version = "~>1.113"
     }
     github = {
       source  = "integrations/github"

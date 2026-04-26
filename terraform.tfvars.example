@@ -1,0 +1,31 @@
+# Copy this file to terraform.tfvars and fill in the placeholders.
+# terraform.tfvars is gitignored; this example is safe to commit.
+
+# ─── Required ─────────────────────────────────────────────────────────────────
+# Azure tenant + subscription the demo deploys into.
+tenant_id       = "00000000-0000-0000-0000-000000000000"
+subscription_id = "00000000-0000-0000-0000-000000000000"
+
+# Azure resource group + region.
+resource_group_name = "rg-dbx-demo"
+location            = "eastus2"
+
+# Names. storage_account_name must match ^[a-z0-9]{3,24}$ and be globally unique.
+access_connector_name = "ac-dbx-demo"
+storage_account_name  = "stdbxdemo123"
+workspace_name        = "dev-eus2-demo-tf"
+workspace_name_prod   = "prod-eus2-demo-tf"
+
+# Databricks account ID (find in https://accounts.azuredatabricks.net account console).
+databricks_account_id = "00000000-0000-0000-0000-000000000000"
+
+# ─── Optional (defaults shown) ────────────────────────────────────────────────
+# github_repo          = "robkisk/dbx-devx-workshop"
+# catalog_name_dev     = "bu1_dev"
+# catalog_name_prod    = "bu1_prod"
+# schema_name          = "devx_workshop"
+# cicd_sp_display_name = "sp-robkisk-devx-workshop-cicd"
+# tags = {
+#   environment = "demo"
+#   owner       = "your-name"
+# }
